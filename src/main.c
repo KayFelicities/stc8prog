@@ -19,11 +19,12 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
-#include <err.h>
 #include <getopt.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 #include <errno.h>
+#ifdef _WIN32
+#include <process.h>
+#endif
 
 #define DEFAULTS_PORT                "/dev/ttyUSB0"
 #define DEFAULTS_SPEED               115200L
@@ -124,6 +125,13 @@ static int32_t invite_mcu(const uint32_t reset_time,
     {
         if (reset_cmd) {
             printf("Running reset command and waiting for MCU: ");
+#ifdef _WIN32
+            intptr_t pid = _spawnv(_P_NOWAIT, reset_cmd, (const char * const *)reset_args);
+            if (pid == -1) {
+                perror("Could not execute reset command");
+                exit(1);
+            }
+#else
             pid_t pid = fork();
             if (pid < 0) {
                 perror("Could not create new process");
@@ -134,6 +142,7 @@ static int32_t invite_mcu(const uint32_t reset_time,
                     perror("Could not execute reset command");
                 }
             }
+#endif
         } else {
             printf("Waiting for MCU, please cycle power: ");
         }

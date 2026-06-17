@@ -61,7 +61,15 @@ int32_t com_ctor(win32_serial_t * restrict const this,
         return -EALREADY;
     }
 
-    const HANDLE hSerial = CreateFile(path,
+    char device_path[MAX_PATH];
+    const char *open_path = path;
+    if ((0 == _strnicmp(path, "COM", 3)) &&
+        ('0' <= path[3]) && ('9' >= path[3])) {
+        snprintf(device_path, sizeof(device_path), "\\\\.\\%s", path);
+        open_path = device_path;
+    }
+
+    const HANDLE hSerial = CreateFile(open_path,
 		                              GENERIC_READ | GENERIC_WRITE,
 		                              0,
 		                              NULL,
@@ -194,7 +202,7 @@ int32_t com_setup(win32_serial_t * restrict const this,
 	dcbSerialParams.wReserved = 0;
 	dcbSerialParams.fDtrControl = DTR_CONTROL_DISABLE;
 	dcbSerialParams.fRtsControl = RTS_CONTROL_DISABLE;
-	dcbSerialParams.fParity = false;
+	dcbSerialParams.fParity = (USERIAL_PARITY_NONE != parity);
 	dcbSerialParams.fInX = 0;
 	dcbSerialParams.fOutX = 0;
 	dcbSerialParams.XonChar = 0x11;
@@ -408,5 +416,3 @@ win32_serial_t serial = {
 
     /* windows-specific */    
 };
-
-
