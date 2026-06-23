@@ -19,6 +19,7 @@
 #include <windows.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include "userial.h"
 
 #ifdef __GNUC__
@@ -262,9 +263,13 @@ int32_t com_setup(win32_serial_t * restrict const this,
     if(unlikely(!purge_res)){
         return -EIO; 
     }
-    /* Windows happy only when rts is set */
-    const bool rts_res = EscapeCommFunction(this->win32_specific.ttys, SETRTS);
+    const bool rts_res = EscapeCommFunction(this->win32_specific.ttys, CLRRTS);
     if(unlikely(!rts_res)){
+        return -EIO;
+    }
+
+    const bool dtr_res = EscapeCommFunction(this->win32_specific.ttys, CLRDTR);
+    if(unlikely(!dtr_res)){
         return -EIO;
     }
 
